@@ -19,7 +19,7 @@ var Sandbox = {
 			fallback : true // if true, use native `eval` if the iframe method fails
 		},
 		initialize: function() {
-			_.bindAll(this);
+			//_.bindAll(this);
 
 			// Attempt to fetch the Model from localStorage
 			this.fetch();
@@ -28,7 +28,7 @@ var Sandbox = {
 			if ( this.get('iframe') ) this.iframeSetup();
 
 			// When the Model is destroyed (eg. via ':clear'), erase the current history as well
-			this.bind("destroy", function(model) {
+			this.on("destroy", function(model) {
 				model.set({history:[]});
 			});
 		},
@@ -82,8 +82,9 @@ var Sandbox = {
 			history.push(item);
 
 			// Update the history state and save the model
-			this.set({ history : history }).change();
-			this.save();
+			//this.set({ history : history }).change();
+			this.save({ history : history });
+			this.trigger("change");
 
 			return this;
 		},
@@ -156,7 +157,7 @@ var Sandbox = {
 	 */
 	View : Backbone.View.extend({
 		initialize: function(opts) {
-			_.bindAll(this);
+			_.bindAll(this, "keydown", "keyup", "focus", "update");
 
 			// Set up the history state (the up/down access to command history)
 			this.historyState = this.model.get('history').length;
@@ -169,18 +170,18 @@ var Sandbox = {
 			this.helpText = opts.helpText || "type javascript commands into the console, hit enter to evaluate. \n[up/down] to scroll through history, ':clear' to reset it. \n[alt + return/up/down] for returns and multi-line editing.";
 
 			// Bind to the model's change event to update the View
-			this.model.bind("change", this.update);
+			this.model.on("change", this.update);
 
 			// Delegate key and mouse events to View input
-			this.el.delegate("textarea", {
+			this.$el.on({
 				keydown : this.keydown,
 				keyup : this.keyup
-			});
+			}, "textarea");
 
 			// Delegate click event to View output
-			this.el.delegate(".output", {
+			this.$el.on({
 				click : this.focus
-			});
+			}, ".output");
 
 			// Render the textarea
 			this.render();
@@ -192,12 +193,12 @@ var Sandbox = {
 
 		// Renders the Sandbox View initially and stores references to the elements
 		render: function() {
-			this.el.html(this.template({
+			this.$el.html(this.template({
 				placeholder : this.placeholder
 			}));
 
-			this.textarea = this.el.find("textarea");
-			this.output = this.el.find(".output");
+			this.textarea = this.$el.find("textarea");
+			this.output = this.$el.find(".output");
 
 			return this;
 		},
